@@ -1,7 +1,9 @@
 ---
 import { couriersStore } from "../stores/couriers";
 const response = await fetch(`${import.meta.env.PUBLIC_BASE_URL}/api/courier`);
-const couriers = await response.json();
+const couriersData = await response.json();
+
+const couriers = couriersData ?? [];
 
 await couriersStore.set(couriers);
 ---
