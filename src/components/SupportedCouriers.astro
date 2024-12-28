@@ -1,11 +1,20 @@
 ---
 import { couriersStore } from "../stores/couriers";
-const response = await fetch(`${import.meta.env.PUBLIC_BASE_URL}/api/courier`);
-const couriersData = await response.json();
 
-const couriers = couriersData ?? [];
+let couriers = [];
 
-await couriersStore.set(couriers);
+try {
+  const response = await fetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/courier`
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  couriers = await response.json();
+  await couriersStore.set(couriers);
+} catch (error) {
+  couriers = [];
+}
 ---
 
 <div class="mt-16">
