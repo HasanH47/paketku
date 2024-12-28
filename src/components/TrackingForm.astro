@@ -1,15 +1,18 @@
 ---
 import { couriersStore } from "../stores/couriers";
 
-const couriers = couriersStore.get();
+let couriers = couriersStore.get();
 
 if (couriers.length === 0) {
-  const response = await fetch(
-    `${import.meta.env.PUBLIC_BASE_URL}/api/courier`
-  );
-  const couriers = await response.json();
-
-  await couriersStore.set(couriers);
+  try {
+    const response = await fetch(
+      `${import.meta.env.PUBLIC_BASE_URL}/api/courier`
+    );
+    couriers = await response.json();
+    couriersStore.set(couriers);
+  } catch (error) {
+    couriers = [];
+  }
 }
 ---
 
