@@ -1,11 +1,26 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from "../layouts/Layout.astro";
+import TrackingForm from "../components/TrackingForm.astro";
+import TrackingResult from "../components/TrackingResult.astro";
+import SupportedCouriers from "../components/SupportedCouriers.astro";
 ---
 
 <Layout>
-	<Welcome />
+  <main>
+    <div class="text-center mb-12">
+      <h1
+        class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4"
+      >
+        Track Your Package
+      </h1>
+      <p class="text-gray-400 max-w-2xl mx-auto">
+        Enter your tracking number and we'll automatically check across all
+        supported courier services to find your package status.
+      </p>
+    </div>
+
+    <TrackingForm />
+    <TrackingResult />
+    <SupportedCouriers />
+  </main>
 </Layout>

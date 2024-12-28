@@ -1,0 +1,170 @@
+---
+
+---
+
+<div id="result-container" class="mt-8 hidden animate-fade-in px-4 sm:px-0">
+  <div class="relative group">
+    <div
+      class="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl opacity-25"
+    >
+    </div>
+    <div
+      class="relative bg-gray-900/50 rounded-2xl p-4 sm:p-6 backdrop-blur-xl border border-gray-800"
+    >
+      <div
+        class="flex flex-col gap-4 sm:flex-row justify-between items-start sm:items-center mb-6"
+      >
+        <div>
+          <h2
+            class="text-lg sm:text-2xl font-semibold tracking-tight"
+            id="tracking-number"
+          >
+          </h2>
+          <p class="text-gray-400 text-sm sm:text-base" id="courier-service">
+          </p>
+        </div>
+        <div
+          class="px-3 py-1 sm:px-4 sm:py-2 rounded-full text-sm sm:text-base"
+          id="status-badge"
+        >
+        </div>
+      </div>
+
+      <div class="relative">
+        <div
+          class="absolute left-6 sm:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-blue-500 to-purple-500 glow-line"
+          id="timeline-line"
+        >
+        </div>
+        <div id="timeline" class="space-y-4 sm:space-y-6"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .glow-line {
+    box-shadow: 0 0 8px theme("colors.blue.500");
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .timeline-item {
+    animation: slideIn 0.5s ease-out backwards;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+</style>
+
+<script>
+  const resultContainer = document.getElementById("result-container");
+  const trackingNumberEl = document.getElementById("tracking-number");
+  const courierServiceEl = document.getElementById("courier-service");
+  const statusBadgeEl = document.getElementById("status-badge");
+  const timelineEl = document.getElementById("timeline");
+
+  function getStatusInfo(status: string) {
+    const statusMap: Record<string, { class: string; text: string }> = {
+      DELIVERED: {
+        class: "bg-green-500/20 text-green-400 border border-green-500/20",
+        text: "Terkirim",
+      },
+      ON_PROCESS: {
+        class: "bg-blue-500/20 text-blue-400 border border-blue-500/20",
+        text: "Dalam Perjalanan",
+      },
+      ON_PICKUP: {
+        class: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/20",
+        text: "Pengambilan",
+      },
+      PENDING: {
+        class: "bg-gray-500/20 text-gray-400 border border-gray-500/20",
+        text: "Menunggu",
+      },
+    };
+    return (
+      statusMap[status] || {
+        class: "bg-gray-500/20 text-gray-400",
+        text: status,
+      }
+    );
+  }
+
+  function formatDate(dateString: string) {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  window.addEventListener("tracking-start", () => {
+    if (resultContainer) resultContainer.classList.add("hidden");
+  });
+
+  window.addEventListener("tracking-result", (e: any) => {
+    const data = e.detail.data;
+
+    if (trackingNumberEl) trackingNumberEl.textContent = `#${data.summary.awb}`;
+    if (courierServiceEl) courierServiceEl.textContent = data.summary.courier;
+    if (statusBadgeEl) {
+      const status = getStatusInfo(data.summary.status);
+      statusBadgeEl.className = `px-4 py-2 rounded-full ${status.class}`;
+      statusBadgeEl.textContent = status.text;
+    }
+
+    if (timelineEl) {
+      timelineEl.innerHTML = data.history
+        .map(
+          (item: any, index: number) => `
+        <div class="relative pl-16 timeline-item" style="animation-delay: ${index * 100}ms">
+        <div class="absolute left-6 w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-4 border-gray-900 shadow-glow"></div>
+        <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-800 hover:border-gray-700 transition-all">
+          <p class="text-sm text-gray-400" style="word-break: break-word; overflow-wrap: break-word;">${formatDate(item.date)}</p>
+          <p class="mt-1 font-medium" style="word-break: break-word; overflow-wrap: break-word;">${item.desc}</p>
+          <p class="text-sm text-blue-400 mt-1" style="word-break: break-word; overflow-wrap: break-word;">${item.location}</p>
+        </div>
+      </div>
+      `
+        )
+        .join("");
+    }
+
+    if (resultContainer) resultContainer.classList.remove("hidden");
+  });
+
+  window.addEventListener("tracking-error", (e: any) => {
+    if (timelineEl) {
+      timelineEl.innerHTML = `
+        <div class="text-center py-8 text-gray-400">
+          <p>Resi tidak ditemukan</p>
+        </div>
+      `;
+    }
+  });
+</script>

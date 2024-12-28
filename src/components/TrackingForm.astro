@@ -1,0 +1,137 @@
+---
+import { couriersStore } from "../stores/couriers";
+
+const couriers = couriersStore.get();
+
+if (couriers.length === 0) {
+  const response = await fetch(
+    `${import.meta.env.PUBLIC_BASE_URL}/api/courier`
+  );
+  const couriers = await response.json();
+
+  await couriersStore.set(couriers);
+}
+---
+
+<div class="w-full max-w-lg mx-auto px-4 sm:px-0">
+  <div class="relative group">
+    <div class="relative mb-4">
+      <select
+        id="courier"
+        class="w-full px-4 py-3 sm:px-6 sm:py-4 bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white text-sm sm:text-base transition-all"
+      >
+        <option value="">Pilih ekspedisi...</option>
+        {
+          couriers.map((courier: any) => (
+            <option value={courier.code}>{courier.description}</option>
+          ))
+        }
+      </select>
+    </div>
+    <div class="relative">
+      <input
+        type="text"
+        id="tracking-number"
+        class="w-full px-4 py-3 sm:px-6 sm:py-4 bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 text-sm sm:text-base transition-all"
+        placeholder="Masukkan nomor resi..."
+      />
+      <button
+        id="track-button"
+        class="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 sm:px-6 sm:py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:to-purple-500 rounded-lg text-white font-medium text-sm sm:text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span class="tracking-normal-state">Lacak</span>
+        <span class="tracking-loading-state hidden">
+          <svg
+            class="animate-spin h-4 w-4 sm:h-5 sm:w-5"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById("tracking-number") as HTMLInputElement;
+  const button = document.getElementById("track-button") as HTMLButtonElement;
+  const select = document.getElementById("courier") as HTMLSelectElement;
+  const normalState = button?.querySelector(".tracking-normal-state");
+  const loadingState = button?.querySelector(".tracking-loading-state");
+
+  function setLoadingState(isLoading: boolean) {
+    if (isLoading) {
+      normalState?.classList.add("hidden");
+      loadingState?.classList.remove("hidden");
+      button.disabled = true;
+    } else {
+      normalState?.classList.remove("hidden");
+      loadingState?.classList.add("hidden");
+      button.disabled = false;
+    }
+  }
+
+  async function trackPackage(awb: string, courier: string) {
+    try {
+      setLoadingState(true);
+      const response = await fetch(`/api/track?awb=${awb}&courier=${courier}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        window.dispatchEvent(
+          new CustomEvent("tracking-result", { detail: data })
+        );
+      } else {
+        window.dispatchEvent(
+          new CustomEvent("tracking-error", {
+            detail: data.message || "Terjadi kesalahan saat melacak paket",
+          })
+        );
+      }
+    } catch (error) {
+      window.dispatchEvent(
+        new CustomEvent("tracking-error", {
+          detail: "Terjadi kesalahan pada sistem. Silakan coba lagi nanti.",
+        })
+      );
+    } finally {
+      setLoadingState(false);
+    }
+  }
+
+  input?.addEventListener("input", () => {
+    button.disabled = !input.value;
+  });
+
+  button?.addEventListener("click", () => {
+    if (input.value) {
+      window.dispatchEvent(new CustomEvent("tracking-start"));
+      trackPackage(input.value, select.value);
+    }
+  });
+
+  input?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter" && input.value) {
+      window.dispatchEvent(new CustomEvent("tracking-start"));
+      trackPackage(input.value, select.value);
+    }
+  });
+
+  select?.addEventListener("change", () => {
+    button.disabled = !input.value || !select.value;
+  });
+</script>
