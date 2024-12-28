@@ -26,7 +26,9 @@ if (couriers.length === 0) {
         <option value="">Pilih ekspedisi...</option>
         {
           couriers.map((courier: any) => (
-            <option value={courier.code}>{courier.description}</option>
+            <option value={courier.code} data-description={courier.description}>
+              {courier.description}
+            </option>
           ))
         }
       </select>
@@ -67,6 +69,13 @@ if (couriers.length === 0) {
       </button>
     </div>
   </div>
+  <div id="tracking-history" class="mt-8">
+    <h3 class="text-lg font-semibold mb-4">
+      Nomor Resi yang Pernah Dimasukkan:
+    </h3>
+    <div id="tracking-history-list" class="flex space-x-2 overflow-x-auto">
+    </div>
+  </div>
 </div>
 
 <script>
@@ -75,6 +84,7 @@ if (couriers.length === 0) {
   const select = document.getElementById("courier") as HTMLSelectElement;
   const normalState = button?.querySelector(".tracking-normal-state");
   const loadingState = button?.querySelector(".tracking-loading-state");
+  const historyList = document.getElementById("tracking-history-list");
 
   function setLoadingState(isLoading: boolean) {
     if (isLoading) {
@@ -88,7 +98,44 @@ if (couriers.length === 0) {
     }
   }
 
-  async function trackPackage(awb: string, courier: string) {
+  function saveTrackingNumber(awb: string, courierDescription: string) {
+    const trackingHistory = JSON.parse(
+      localStorage.getItem("trackingHistory") ?? "[]"
+    ) as { awb: string; courierDescription: string }[];
+
+    const exists = trackingHistory.some(
+      (item) =>
+        item.awb === awb && item.courierDescription === courierDescription
+    );
+
+    if (!exists) {
+      trackingHistory.unshift({ awb, courierDescription });
+      localStorage.setItem("trackingHistory", JSON.stringify(trackingHistory));
+      displayTrackingHistory();
+    }
+  }
+
+  function displayTrackingHistory() {
+    const trackingHistory = JSON.parse(
+      localStorage.getItem("trackingHistory") ?? "[]"
+    ) as { awb: string; courierDescription: string }[];
+    if (historyList) {
+      historyList.innerHTML = "";
+      trackingHistory.forEach(({ awb, courierDescription }) => {
+        const badge = document.createElement("div");
+        badge.className =
+          "bg-blue-600 text-white px-4 py-2 rounded-full whitespace-nowrap";
+        badge.textContent = `Kode Resi: ${awb}, Ekspedisi: ${courierDescription}`;
+        historyList.appendChild(badge);
+      });
+    }
+  }
+
+  async function trackPackage(
+    awb: string,
+    courier: string,
+    courierDescription: string
+  ) {
     try {
       setLoadingState(true);
       const response = await fetch(`/api/track?awb=${awb}&courier=${courier}`);
@@ -98,6 +145,7 @@ if (couriers.length === 0) {
         window.dispatchEvent(
           new CustomEvent("tracking-result", { detail: data })
         );
+        saveTrackingNumber(awb, courierDescription);
       } else {
         window.dispatchEvent(
           new CustomEvent("tracking-error", {
@@ -122,19 +170,29 @@ if (couriers.length === 0) {
 
   button?.addEventListener("click", () => {
     if (input.value) {
+      const selectedOption = select.options[select.selectedIndex];
+      const courierCode = selectedOption.value;
+      const courierDescription =
+        selectedOption.getAttribute("data-description") ?? "";
       window.dispatchEvent(new CustomEvent("tracking-start"));
-      trackPackage(input.value, select.value);
+      trackPackage(input.value, courierCode, courierDescription);
     }
   });
 
   input?.addEventListener("keypress", (e) => {
     if (e.key === "Enter" && input.value) {
+      const selectedOption = select.options[select.selectedIndex];
+      const courierCode = selectedOption.value;
+      const courierDescription =
+        selectedOption.getAttribute("data-description") ?? "";
       window.dispatchEvent(new CustomEvent("tracking-start"));
-      trackPackage(input.value, select.value);
+      trackPackage(input.value, courierCode, courierDescription);
     }
   });
 
   select?.addEventListener("change", () => {
     button.disabled = !input.value || !select.value;
   });
+
+  displayTrackingHistory();
 </script>

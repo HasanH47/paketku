@@ -7,9 +7,6 @@ try {
   const response = await fetch(
     `${import.meta.env.PUBLIC_BASE_URL}/api/courier`
   );
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
   couriers = await response.json();
   await couriersStore.set(couriers);
 } catch (error) {
@@ -25,7 +22,7 @@ try {
     {
       couriers.map((courier: any) => (
         <div class="relative group bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700">
-          <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
+          <div class="absolute -inset-1 rounded-xl blur opacity-25" />
           <div class="relative">
             <h3 class="font-medium text-sm sm:text-base">
               {courier.description}
