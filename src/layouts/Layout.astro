@@ -1,5 +1,6 @@
 ---
-import { ViewTransitions } from "astro:transitions";
+import { ClientRouter } from "astro:transitions";
+import Footer from "../components/Footer.astro";
 ---
 
 <!doctype html>
@@ -14,14 +15,13 @@ import { ViewTransitions } from "astro:transitions";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>PaketKu - Lacak Paket dengan Mudah</title>
-    <ViewTransitions />
+    <ClientRouter />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
   <body class="min-h-screen font-['Plus_Jakarta_Sans']">
-    <!-- Gradient Background -->
     <div class="fixed inset-0 -z-10">
       <div class="absolute inset-0 bg-[#0c0c0c]">
         <div
@@ -44,6 +44,8 @@ import { ViewTransitions } from "astro:transitions";
         <slot />
       </div>
     </div>
+
+    <Footer />
   </body>
 </html>
 
